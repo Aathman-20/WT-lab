@@ -57,6 +57,8 @@ async function runTests() {
     await driver.wait(until.elementIsVisible(errorBanner), WAIT_TIMEOUT);
     const validationBannerText = await driver.findElement(By.id('error-message-text')).getText();
     assert.ok(validationBannerText.includes('validation errors'), 'Validation error banner should appear.');
+    const nameErr = await driver.findElement(By.id('error-name'));
+    await driver.wait(until.elementIsVisible(nameErr), WAIT_TIMEOUT);
     console.log(' -> PASSED: Validation prevented empty form submission.');
 
     // -----------------------------------------------------------------
@@ -151,13 +153,29 @@ async function runTests() {
     }, WAIT_TIMEOUT, 'Deleted row still present in DOM.');
     console.log(' -> PASSED: Record deleted and removed from table.');
 
+    // TEST 9: Search with no matches shows the empty-state row
+    console.log('\n[Test 9] Searching for text that cannot match...');
+    const s2 = await driver.findElement(By.id('search-input'));
+    await s2.clear();
+    await s2.sendKeys('zzz-no-such-record-' + uniqueSuffix);
+    await driver.wait(until.elementLocated(By.id('empty-state-row')), WAIT_TIMEOUT);
+    console.log(' -> PASSED: Empty-state row shown for no matches.');
+
     console.log('\n==========================================================');
-    console.log(' ALL 8 SELENIUM TESTS COMPLETED SUCCESSFULLY');
+    console.log(' ALL 9 SELENIUM TESTS COMPLETED SUCCESSFULLY');
     console.log('==========================================================');
   } catch (error) {
     console.error('\n[TEST FAILURE]:', error.message);
     process.exitCode = 1;
   } finally {
+    // Cleanup: remove the test record if a failure left it behind (needs Node 18+ for fetch)
+    try {
+      const res = await fetch(APP_URL + '/api/students');
+      const body = await res.json();
+      for (const s of body.data || []) {
+        if (s.rollNo === testRecord.rollNo) await fetch(APP_URL + '/api/students/' + s._id, { method: 'DELETE' });
+      }
+    } catch (e) { /* cleanup is best effort */ }
     if (driver) {
       await driver.quit();
     }

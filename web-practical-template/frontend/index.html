@@ -34,7 +34,9 @@
     // CHANGE HERE: Replace StudentService with the new entity service name if desired.
     app.service('StudentService', ['$http', function($http) {
       // CHANGE HERE: Update the backend API endpoint (e.g., '/api/books' or 'http://localhost:5000/api/books').
-      var API_URL = 'http://localhost:5000/api/students';
+      // Served by Express -> relative URL works. Opened as a file:// page -> fall back to localhost:5000.
+      var API_BASE = (window.location.protocol === 'file:') ? 'http://localhost:5000' : '';
+      var API_URL = API_BASE + '/api/students';
 
       this.getAll = function() {
         return $http.get(API_URL);

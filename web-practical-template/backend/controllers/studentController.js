@@ -1,10 +1,9 @@
-const mongoose = require('mongoose');
 // CHANGE HERE: Replace Student model import if the model file was renamed.
 const Student = require('../models/Student');
 
 // Helper: Validate MongoDB ObjectId format
 function isValidObjectId(id) {
-  return mongoose.Types.ObjectId.isValid(id);
+  return /^[a-fA-F0-9]{24}$/.test(String(id)); // strict 24-hex check
 }
 
 // 1. CREATE (POST /api/students)
@@ -107,11 +106,15 @@ exports.updateStudent = async (req, res, next) => {
     }
 
     // CHANGE HERE: Update field names extracted from req.body when updating a record.
-    const { name, rollNo, department, email, year } = req.body;
+    const allowed = ['name', 'rollNo', 'department', 'email', 'year'];
+    const changes = {};
+    allowed.forEach((key) => {
+      if (req.body[key] !== undefined) changes[key] = key === 'year' ? Number(req.body[key]) : req.body[key];
+    });
 
     const updated = await Student.findByIdAndUpdate(
       id,
-      { name, rollNo, department, email, year: Number(year) },
+      changes,
       { new: true, runValidators: true }
     );
 
