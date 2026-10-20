@@ -9,11 +9,11 @@
         <!-- CHANGE HERE: Update the XSLT output report title. -->
         <title>Student Directory — XML/XSLT Report</title>
         <style>
-          /* CHANGE HERE: Customize XSLT report colors (Warm neutral palette; no blue/purple). */
+          /* CHANGE HERE: Customize XSLT report colors (white, black, grey and green). */
           body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #F7F4EE;
-            color: #262522;
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #F5F5F5;
+            color: #212121;
             margin: 0;
             padding: 32px 20px;
           }
@@ -21,19 +21,19 @@
             max-width: 960px;
             margin: 0 auto;
             background-color: #FFFFFF;
-            border: 1px solid #D8D2C5;
+            border: 1px solid #BDBDBD;
             border-radius: 6px;
             padding: 24px;
-            box-shadow: 0 1px 3px rgba(38, 37, 34, 0.07);
+            
           }
           h1 {
             margin: 0 0 6px 0;
             font-size: 1.4rem;
-            color: #262522;
+            color: #212121;
           }
           p.subtitle {
             margin: 0 0 20px 0;
-            color: #5A574F;
+            color: #616161;
             font-size: 0.92rem;
           }
           table {
@@ -44,24 +44,24 @@
           th, td {
             text-align: left;
             padding: 11px 12px;
-            border-bottom: 1px solid #D8D2C5;
+            border-bottom: 1px solid #BDBDBD;
           }
           th {
-            background-color: #EFECE4;
-            color: #5A574F;
+            background-color: #EEEEEE;
+            color: #616161;
             text-transform: uppercase;
             font-size: 0.8rem;
             letter-spacing: 0.03em;
           }
           tr:hover {
-            background-color: #FAF8F3;
+            background-color: #F5F5F5;
           }
           .badge {
             display: inline-block;
             padding: 3px 8px;
-            background-color: #E8F2EA;
-            color: #2D5A36;
-            border: 1px solid #C5DEC9;
+            background-color: #E8F5E9;
+            color: #1B5E20;
+            border: 1px solid #2E7D32;
             border-radius: 4px;
             font-size: 0.8rem;
             font-weight: 600;
@@ -69,7 +69,7 @@
           .summary-footer {
             margin-top: 16px;
             font-size: 0.88rem;
-            color: #5A574F;
+            color: #616161;
           }
         </style>
       </head>
