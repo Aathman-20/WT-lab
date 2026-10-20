@@ -1,0 +1,18 @@
+<!-- =====================================================================
+     EXTERNAL DTD FOR XML DEMONSTRATION (xml-demo/students.dtd)
+     CHANGE HERE: Update DTD element and attribute declarations for the new scenario.
+     ===================================================================== -->
+
+<!ELEMENT students (student+)>
+<!ELEMENT student (name, rollNo, department, email, year)>
+
+<!ATTLIST student
+  id ID #REQUIRED
+  status (Active | Graduating | Leave) "Active"
+>
+
+<!ELEMENT name (#PCDATA)>
+<!ELEMENT rollNo (#PCDATA)>
+<!ELEMENT department (#PCDATA)>
+<!ELEMENT email (#PCDATA)>
+<!ELEMENT year (#PCDATA)>

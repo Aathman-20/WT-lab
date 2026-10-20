@@ -1,0 +1,11 @@
+{
+  "name": "practical-exam-selenium-tests",
+  "version": "1.0.0",
+  "description": "Automated end-to-end Selenium WebDriver tests for CRUD verification",
+  "scripts": {
+    "test": "node student.test.js"
+  },
+  "dependencies": {
+    "selenium-webdriver": "^4.23.0"
+  }
+}

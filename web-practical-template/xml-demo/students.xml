@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="formatter.xsl"?>
+<!-- CHANGE HERE: Update DOCTYPE root element and external DTD filename if renamed. -->
+<!DOCTYPE students SYSTEM "students.dtd">
+
+<!-- CHANGE HERE: Update XML elements and attributes to match the new scenario. -->
+<students>
+  <student id="STU-101" status="Active">
+    <name>Ananya Sharma</name>
+    <rollNo>CS2026-101</rollNo>
+    <department>Computer Science</department>
+    <email>ananya.sharma@college.edu</email>
+    <year>3</year>
+  </student>
+
+  <student id="STU-102" status="Active">
+    <name>Karthik Sundaram</name>
+    <rollNo>EC2026-204</rollNo>
+    <department>Electronics</department>
+    <email>karthik.s@college.edu</email>
+    <year>2</year>
+  </student>
+
+  <student id="STU-103" status="Graduating">
+    <name>Meera Nair</name>
+    <rollNo>ME2026-309</rollNo>
+    <department>Mechanical</department>
+    <email>meera.nair@college.edu</email>
+    <year>4</year>
+  </student>
+
+  <student id="STU-104" status="Active">
+    <name>Vikramaditya Rao</name>
+    <rollNo>IT2026-118</rollNo>
+    <department>Information Technology</department>
+    <email>vikram.rao@college.edu</email>
+    <year>1</year>
+  </student>
+</students>

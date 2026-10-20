@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="practicalApp">
+<!-- =====================================================================
+     SECTION 1: HTML DOCUMENT STRUCTURE AND METADATA
+     ===================================================================== -->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- CHANGE HERE: Update the application title for the new scenario. -->
+  <title>Student Management System | Academic Registry</title>
+
+  <!-- ===================================================================
+       SECTION 2: EXTERNAL CSS REFERENCE
+       =================================================================== -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- ===================================================================
+       SECTION 3: ANGULARJS LIBRARY REFERENCE (v1.8.3)
+       NOTE: Loading from CDN requires internet access. For offline exams,
+       download angular.min.js into frontend/ and change src="angular.min.js".
+       =================================================================== -->
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+
+  <script>
+    /* ===================================================================
+       SECTION 4: ANGULARJS MODULE CONFIGURATION
+       Unchanged structure: Only rename the module if explicitly asked.
+       =================================================================== */
+    var app = angular.module('practicalApp', []);
+
+    /* ===================================================================
+       SECTION 5: API SERVICE ($http communication with Node.js Backend)
+       =================================================================== */
+    // CHANGE HERE: Replace StudentService with the new entity service name if desired.
+    app.service('StudentService', ['$http', function($http) {
+      // CHANGE HERE: Update the backend API endpoint (e.g., '/api/books' or 'http://localhost:5000/api/books').
+      var API_URL = 'http://localhost:5000/api/students';
+
+      this.getAll = function() {
+        return $http.get(API_URL);
+      };
+
+      this.getById = function(id) {
+        return $http.get(API_URL + '/' + id);
+      };
+
+      this.create = function(recordData) {
+        return $http.post(API_URL, recordData);
+      };
+
+      this.update = function(id, recordData) {
+        return $http.put(API_URL + '/' + id, recordData);
+      };
+
+      this.remove = function(id) {
+        return $http.delete(API_URL + '/' + id);
+      };
+    }]);
+
+    /* ===================================================================
+       SECTION 6: CONTROLLER (CRUD State, Validation, Search, Selection)
+       =================================================================== */
+    // CHANGE HERE: Replace StudentController and injected service name if renamed.
+    app.controller('StudentController', ['$scope', 'StudentService', function($scope, StudentService) {
+
+      // Application state variables (Normally unchanged across scenarios)
+      $scope.records = [];
+      $scope.selectedRecord = null;
+      $scope.isEditMode = false;
+      $scope.isLoading = false;
+      $scope.searchQuery = '';
+      $scope.filterDepartment = '';
+      $scope.statusMessage = '';
+      $scope.errorMessage = '';
+
+      // CHANGE HERE: Update dropdown options to match your scenario (e.g., Book Categories, Hospital Wards).
+      $scope.departments = [
+        'Computer Science',
+        'Electronics',
+        'Mechanical',
+        'Civil Engineering',
+        'Information Technology'
+      ];
+
+      // CHANGE HERE: Update default form fields to match the entity attributes required by the exam.
+      function getEmptyForm() {
+        return {
+          name: '',
+          rollNo: '',
+          department: '',
+          email: '',
+          year: 1
+        };
+      }
+
+      $scope.formData = getEmptyForm();
+
+      // Helper to display feedback messages clearly
+      function setFeedback(statusMsg, errorMsg) {
+        $scope.statusMessage = statusMsg || '';
+        $scope.errorMessage = errorMsg || '';
+      }
+
+      // 1. READ ALL RECORDS
+      $scope.loadRecords = function() {
+        $scope.isLoading = true;
+        StudentService.getAll()
+          .then(function(response) {
+            $scope.records = response.data.data || [];
+            $scope.isLoading = false;
+          })
+          .catch(function(error) {
+            $scope.isLoading = false;
+            var msg = (error.data && error.data.message) ? error.data.message : 'Unable to connect to the backend server.';
+            setFeedback('', msg);
+          });
+      };
+
+      // 2. CREATE OR UPDATE RECORD
+      $scope.saveRecord = function(isValid) {
+        setFeedback('', '');
+
+        if (!isValid) {
+          setFeedback('', 'Please correct the highlighted validation errors before submitting.');
+          return;
+        }
+
+        // CHANGE HERE: Update payload fields and type conversions for the target entity.
+        var payload = {
+          name: $scope.formData.name,
+          rollNo: $scope.formData.rollNo,
+          department: $scope.formData.department,
+          email: $scope.formData.email,
+          year: Number($scope.formData.year)
+        };
+
+        $scope.isLoading = true;
+
+        if ($scope.isEditMode && $scope.formData._id) {
+          // UPDATE EXISTING RECORD
+          StudentService.update($scope.formData._id, payload)
+            .then(function(response) {
+              $scope.isLoading = false;
+              setFeedback(response.data.message || 'Record updated successfully.', '');
+              if ($scope.selectedRecord && $scope.selectedRecord._id === $scope.formData._id) {
+                $scope.selectedRecord = response.data.data;
+              }
+              $scope.resetForm();
+              $scope.loadRecords();
+            })
+            .catch(function(error) {
+              $scope.isLoading = false;
+              var msg = (error.data && error.data.message) ? error.data.message : 'Failed to update record.';
+              setFeedback('', msg);
+            });
+        } else {
+          // CREATE NEW RECORD
+          StudentService.create(payload)
+            .then(function(response) {
+              $scope.isLoading = false;
+              setFeedback(response.data.message || 'Record created successfully.', '');
+              $scope.resetForm();
+              $scope.loadRecords();
+            })
+            .catch(function(error) {
+              $scope.isLoading = false;
+              var msg = (error.data && error.data.message) ? error.data.message : 'Failed to create record.';
+              setFeedback('', msg);
+            });
+        }
+      };
+
+      // 3. VIEW SINGLE RECORD DETAILS (Calls GET /api/students/:id)
+      $scope.viewRecord = function(id) {
+        setFeedback('', '');
+        StudentService.getById(id)
+          .then(function(response) {
+            $scope.selectedRecord = response.data.data;
+          })
+          .catch(function(error) {
+            var msg = (error.data && error.data.message) ? error.data.message : 'Could not fetch record details.';
+            setFeedback('', msg);
+          });
+      };
+
+      $scope.closeDetails = function() {
+        $scope.selectedRecord = null;
+      };
+
+      // 4. POPULATE FORM FOR EDITING
+      $scope.editRecord = function(record) {
+        setFeedback('', '');
+        $scope.isEditMode = true;
+        // CHANGE HERE: Copy all scenario-specific properties into formData for editing.
+        $scope.formData = {
+          _id: record._id,
+          name: record.name,
+          rollNo: record.rollNo,
+          department: record.department,
+          email: record.email,
+          year: Number(record.year)
+        };
+      };
+
+      // 5. DELETE RECORD
+      $scope.deleteRecord = function(id, label) {
+        setFeedback('', '');
+        StudentService.remove(id)
+          .then(function(response) {
+            setFeedback(response.data.message || ('Deleted record: ' + label), '');
+            if ($scope.selectedRecord && $scope.selectedRecord._id === id) {
+              $scope.selectedRecord = null;
+            }
+            if ($scope.isEditMode && $scope.formData._id === id) {
+              $scope.resetForm();
+            }
+            $scope.loadRecords();
+          })
+          .catch(function(error) {
+            var msg = (error.data && error.data.message) ? error.data.message : 'Failed to delete record.';
+            setFeedback('', msg);
+          });
+      };
+
+      // 6. RESET FORM STATE
+      $scope.resetForm = function() {
+        $scope.isEditMode = false;
+        $scope.formData = getEmptyForm();
+        if ($scope.entityForm) {
+          $scope.entityForm.$setPristine();
+          $scope.entityForm.$setUntouched();
+        }
+      };
+
+      // 7. SEARCH AND FILTER PREDICATE FUNCTION
+      // CHANGE HERE: Update the searchable fields (e.g., item.title, item.isbn, item.author).
+      $scope.searchFilter = function(item) {
+        var matchesDepartment = !$scope.filterDepartment || item.department === $scope.filterDepartment;
+        if (!$scope.searchQuery) {
+          return matchesDepartment;
+        }
+        var q = $scope.searchQuery.toLowerCase();
+        var matchName = item.name && item.name.toLowerCase().indexOf(q) !== -1;
+        var matchRoll = item.rollNo && item.rollNo.toLowerCase().indexOf(q) !== -1;
+        var matchDept = item.department && item.department.toLowerCase().indexOf(q) !== -1;
+        var matchEmail = item.email && item.email.toLowerCase().indexOf(q) !== -1;
+
+        return matchesDepartment && (matchName || matchRoll || matchDept || matchEmail);
+      };
+
+      // Initialize data when controller loads
+      $scope.loadRecords();
+    }]);
+
+    /* ===================================================================
+       SECTION 7: CUSTOM FILTER
+       Formats numeric academic year (1-4) into readable academic standing.
+       =================================================================== */
+    // CHANGE HERE: Modify the custom filter logic if your scenario formats prices, stock, or dates.
+    app.filter('academicYearLabel', function() {
+      return function(input) {
+        var yearNum = parseInt(input, 10);
+        var labels = {
+          1: 'Year 1 (First Year)',
+          2: 'Year 2 (Second Year)',
+          3: 'Year 3 (Third Year)',
+          4: 'Year 4 (Final Year)'
+        };
+        return labels[yearNum] || ('Year ' + input);
+      };
+    });
+
+    /* ===================================================================
+       SECTION 8: CUSTOM DIRECTIVE
+       Renders a structured summary badge for each record in the table/view.
+       =================================================================== */
+    // CHANGE HERE: Modify the custom directive attributes and template if its display behavior must change.
+    app.directive('recordBadge', function() {
+      return {
+        restrict: 'E',
+        scope: {
+          code: '@',
+          category: '@'
+        },
+        template: '<span class="record-badge"><strong>{{code}}</strong> &middot; {{category}}</span>'
+      };
+    });
+  </script>
+</head>
+
+<!-- =====================================================================
+     SECTION 9: APPLICATION HTML AND CRUD INTERFACE
+     ===================================================================== -->
+<body ng-controller="StudentController">
+
+  <!-- Top Header Bar -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <div>
+        <!-- CHANGE HERE: Replace Student Management System with the new application name. -->
+        <h1 id="app-title" class="site-title">Student Management System</h1>
+        <p class="site-subtitle">Academic Enrollment &amp; Departmental Record Registry</p>
+      </div>
+      <div class="header-meta">
+        <span class="record-counter" id="total-records-count">
+          Total Records: <strong>{{records.length}}</strong>
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container main-layout">
+
+    <!-- Status and Error Feedback Banners -->
+    <section aria-live="polite" class="feedback-area">
+      <div id="status-banner" class="alert alert-success" ng-show="statusMessage">
+        <strong>Success:</strong> <span id="status-message-text">{{statusMessage}}</span>
+        <button type="button" class="alert-close" ng-click="statusMessage = ''" aria-label="Dismiss success message">Dismiss</button>
+      </div>
+
+      <div id="error-banner" class="alert alert-error" ng-show="errorMessage">
+        <strong>Error:</strong> <span id="error-message-text">{{errorMessage}}</span>
+        <button type="button" class="alert-close" ng-click="errorMessage = ''" aria-label="Dismiss error message">Dismiss</button>
+      </div>
+
+      <div id="loading-indicator" class="loading-bar" ng-if="isLoading">
+        Processing request with database...
+      </div>
+    </section>
+
+    <div class="workspace-grid">
+
+      <!-- LEFT COLUMN: CREATE / EDIT FORM -->
+      <section class="panel form-panel" aria-labelledby="form-heading">
+        <div class="panel-header">
+          <!-- CHANGE HERE: Update form section headings for the target entity. -->
+          <h2 id="form-heading" class="panel-title">
+            {{isEditMode ? 'Edit Student Record' : 'Register New Student'}}
+          </h2>
+          <span class="mode-indicator" ng-if="isEditMode">Editing Mode</span>
+        </div>
+
+        <form name="entityForm" id="student-form" ng-submit="saveRecord(entityForm.$valid)" novalidate>
+
+          <!-- Field 1: Name -->
+          <!-- CHANGE HERE: Update label, id, ng-model, and validation message for Field 1 (e.g., Book Title). -->
+          <div class="form-group">
+            <label for="input-name">Full Name <span class="required-mark">*</span></label>
+            <input
+              type="text"
+              id="input-name"
+              name="name"
+              ng-model="formData.name"
+              placeholder="e.g., Ananya Sharma"
+              required
+              ng-minlength="2"
+              maxlength="80">
+            <div class="field-error" id="error-name" ng-show="(entityForm.$submitted || entityForm.name.$touched) && entityForm.name.$invalid">
+              <span ng-show="entityForm.name.$error.required">Full name is required.</span>
+              <span ng-show="entityForm.name.$error.minlength">Name must be at least 2 characters.</span>
+            </div>
+          </div>
+
+          <!-- Field 2: Roll Number -->
+          <!-- CHANGE HERE: Update label, id, ng-model, and validation for Field 2 (e.g., ISBN / Employee ID). -->
+          <div class="form-group">
+            <label for="input-rollNo">Roll Number <span class="required-mark">*</span></label>
+            <input
+              type="text"
+              id="input-rollNo"
+              name="rollNo"
+              ng-model="formData.rollNo"
+              placeholder="e.g., CS2026-101"
+              required
+              ng-pattern="/^[A-Za-z0-9\-]{3,20}$/">
+            <div class="field-error" id="error-rollNo" ng-show="(entityForm.$submitted || entityForm.rollNo.$touched) && entityForm.rollNo.$invalid">
+              <span ng-show="entityForm.rollNo.$error.required">Roll number is required.</span>
+              <span ng-show="entityForm.rollNo.$error.pattern">Use 3 to 20 alphanumeric characters or hyphens.</span>
+            </div>
+          </div>
+
+          <!-- Field 3: Department -->
+          <!-- CHANGE HERE: Update label, id, and ng-model for Field 3 (e.g., Author / Category). -->
+          <div class="form-group">
+            <label for="input-department">Department <span class="required-mark">*</span></label>
+            <select
+              id="input-department"
+              name="department"
+              ng-model="formData.department"
+              required>
+              <option value="">-- Select Department --</option>
+              <option ng-repeat="dept in departments" value="{{dept}}">{{dept}}</option>
+            </select>
+            <div class="field-error" id="error-department" ng-show="(entityForm.$submitted || entityForm.department.$touched) && entityForm.department.$invalid">
+              <span ng-show="entityForm.department.$error.required">Please select a department.</span>
+            </div>
+          </div>
+
+          <!-- Field 4: Email -->
+          <!-- CHANGE HERE: Update label, id, type, and ng-model for Field 4 (e.g., Publisher Email / Price). -->
+          <div class="form-group">
+            <label for="input-email">Official Email <span class="required-mark">*</span></label>
+            <input
+              type="email"
+              id="input-email"
+              name="email"
+              ng-model="formData.email"
+              placeholder="e.g., ananya.sharma@college.edu"
+              required>
+            <div class="field-error" id="error-email" ng-show="(entityForm.$submitted || entityForm.email.$touched) && entityForm.email.$invalid">
+              <span ng-show="entityForm.email.$error.required">Email address is required.</span>
+              <span ng-show="entityForm.email.$error.email">Enter a valid email address format.</span>
+            </div>
+          </div>
+
+          <!-- Field 5: Year of Study -->
+          <!-- CHANGE HERE: Update label, id, min, max, and ng-model for Field 5 (e.g., Publication Year / Stock). -->
+          <div class="form-group">
+            <label for="input-year">Academic Year (1 to 4) <span class="required-mark">*</span></label>
+            <input
+              type="number"
+              id="input-year"
+              name="year"
+              ng-model="formData.year"
+              min="1"
+              max="4"
+              required>
+            <div class="field-error" id="error-year" ng-show="(entityForm.$submitted || entityForm.year.$touched) && entityForm.year.$invalid">
+              <span ng-show="entityForm.year.$error.required">Academic year is required.</span>
+              <span ng-show="entityForm.year.$error.min || entityForm.year.$error.max">Academic year must be between 1 and 4.</span>
+            </div>
+          </div>
+
+          <!-- Form Buttons -->
+          <div class="form-actions">
+            <button type="submit" id="btn-submit" class="btn btn-primary">
+              {{isEditMode ? 'Update Student' : 'Add Student'}}
+            </button>
+            <button type="button" id="btn-reset" class="btn btn-secondary" ng-click="resetForm()">
+              {{isEditMode ? 'Cancel Edit' : 'Clear Form'}}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- RIGHT COLUMN: SEARCH, FILTER, TABLE, AND DETAILS VIEW -->
+      <section class="panel list-panel" aria-labelledby="list-heading">
+        <div class="panel-header">
+          <!-- CHANGE HERE: Update directory heading for the target scenario. -->
+          <h2 id="list-heading" class="panel-title">Registered Student Directory</h2>
+          <button type="button" id="btn-refresh" class="btn btn-secondary btn-sm" ng-click="loadRecords()">
+            Refresh List
+          </button>
+        </div>
+
+        <!-- Search and Filter Controls -->
+        <div class="toolbar">
+          <div class="toolbar-item search-box">
+            <label for="search-input">Search Records</label>
+            <!-- CHANGE HERE: Update search placeholder text. -->
+            <input
+              type="text"
+              id="search-input"
+              ng-model="searchQuery"
+              placeholder="Search by name, roll no, department, or email...">
+          </div>
+
+          <div class="toolbar-item filter-box">
+            <label for="filter-department">Filter by Department</label>
+            <select id="filter-department" ng-model="filterDepartment">
+              <option value="">All Departments</option>
+              <option ng-repeat="dept in departments" value="{{dept}}">{{dept}}</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Selected Record Detail Inspection Panel (Demonstrates GET /api/students/:id and Custom Directive) -->
+        <div id="record-details-panel" class="details-box" ng-if="selectedRecord">
+          <div class="details-header">
+            <h3>Student Record Inspector</h3>
+            <button type="button" id="btn-close-details" class="btn btn-secondary btn-sm" ng-click="closeDetails()">
+              Close Inspector
+            </button>
+          </div>
+          <!-- CHANGE HERE: Update inspected detail fields and custom directive attributes. -->
+          <div class="details-grid">
+            <div><strong>Full Name:</strong> <span id="detail-name">{{selectedRecord.name}}</span></div>
+            <div><strong>Roll Number:</strong> <span id="detail-rollNo">{{selectedRecord.rollNo}}</span></div>
+            <div><strong>Department:</strong> <span id="detail-department">{{selectedRecord.department}}</span></div>
+            <div><strong>Official Email:</strong> <span id="detail-email">{{selectedRecord.email}}</span></div>
+            <div><strong>Academic Standing:</strong> <span id="detail-year">{{selectedRecord.year | academicYearLabel}}</span></div>
+            <div>
+              <strong>Summary Badge:</strong>
+              <record-badge code="{{selectedRecord.rollNo}}" category="{{selectedRecord.department}}"></record-badge>
+            </div>
+          </div>
+        </div>
+
+        <!-- Records Table -->
+        <div class="table-responsive">
+          <table id="records-table" class="data-table">
+            <thead>
+              <!-- CHANGE HERE: Update table column headers to match your entity fields. -->
+              <tr>
+                <th scope="col">Roll No &amp; Dept</th>
+                <th scope="col">Student Name</th>
+                <th scope="col">Email Address</th>
+                <th scope="col">Academic Year</th>
+                <th scope="col" class="actions-col">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- CHANGE HERE: Update row bindings, custom directive, and custom filter usage. -->
+              <tr ng-repeat="student in filteredRecords = (records | filter:searchFilter)" class="record-row" data-roll="{{student.rollNo}}">
+                <td data-label="Roll No &amp; Dept">
+                  <!-- Custom Directive Usage -->
+                  <record-badge code="{{student.rollNo}}" category="{{student.department}}"></record-badge>
+                </td>
+                <td data-label="Student Name" class="cell-primary">{{student.name}}</td>
+                <td data-label="Email Address">{{student.email}}</td>
+                <td data-label="Academic Year">
+                  <!-- Custom Filter Usage -->
+                  {{student.year | academicYearLabel}}
+                </td>
+                <td data-label="Actions" class="actions-cell">
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-sm btn-view"
+                    ng-click="viewRecord(student._id)">
+                    View
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-sm btn-edit"
+                    ng-click="editRecord(student)">
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-danger btn-sm btn-delete"
+                    ng-click="deleteRecord(student._id, student.rollNo)">
+                    Delete
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Empty State Row -->
+              <tr id="empty-state-row" ng-if="filteredRecords.length === 0 && !isLoading">
+                <td colspan="5" class="empty-state">
+                  No matching student records found. Use the form on the left to add a record or clear your search filter.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <!-- CHANGE HERE: Update footer caption if required by the scenario. -->
+      <p>Academic Registry Portal &middot; Powered by AngularJS 1.8, Express, and MongoDB</p>
+    </div>
+  </footer>
+
+</body>
+</html>
